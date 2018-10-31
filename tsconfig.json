@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+        "outDir": "./dist/",
+        "sourceMap": true,
+        "removeComments": true,
+        "noImplicitAny": false,
+        "preserveConstEnums": true,
+        "module": "commonjs",
+        "target": "ES6",
+        "jsx": "react",
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true
+    }
+}

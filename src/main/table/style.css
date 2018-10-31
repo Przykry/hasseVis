@@ -1,0 +1,27 @@
+
+.buttonX {
+    background-color: rgb(244, 244, 244);
+    height: 32px;
+    width: 100%
+}
+
+.buttonY {
+    background-color: rgb(244, 244, 244);
+    width: 32px;
+    min-height: calc(100% - 32px)
+}
+
+.center {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+}
+
+.inline-block {
+ display: inline-block;
+}
+
+.flex{
+ display: flex;
+}

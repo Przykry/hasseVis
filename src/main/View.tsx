@@ -1,130 +1,199 @@
 import * as React from "react";
-import { Button, TextField } from "office-ui-fabric-react";
+import { Button, TextField, DefaultButton } from "office-ui-fabric-react";
 import Table from "./table/Table";
 import "./table/style.css";
-import { getValues } from "./clientApi";
-import { DataSheet, GridElement } from "../components/ReactDatasheet";
-import ReactDataSheet from "../../node_modules/react-datasheet";
-import Cytoscape from "react-cytoscape"
+import { HasseDiagramApi } from "./clientApi";
 import Graph from "./Graph";
 import { DataSet } from "vis";
+import "./styles/view.less"
+import { NumberInput } from "./components/NumberInput";
+import { defaultsDeep } from "lodash";
+import { CellType } from "./table/TableModel";
+import Cell from "./table/Cell";
+import { IsCorrectNumber } from "./tools/ValidationTool";
+import SimpleSelect from "./NormalizationTypeSelect";
 
 interface IViewState {
-    grid: GridElement[][];
-    columns: any[];
+    data: CellType[][];
+    graph: any;
 }
-
 
 let nodes = [
-    { id: 1, label: "1"},
-    { id: 2, label: "2"},
-    { id: 3, label: "3"},
-    { id: 4, label: "4"},
-    { id: 5, label: "5"}
+    { id: "A", label: "A", cid: 1 },
+    { id: "B", label: "B", cid: 1 },
+    { id: 3, label: "3" },
+    { id: 4, label: "4" },
+    { id: 5, label: "5" }
 ];
 
-let edges = [{ from: 1, to: 2 }, { from: 1, to: 3 }, { from: 2, to: 4 }, { from: 2, to: 5 }];
+const criterionTypes = [
+    { key: "normal", value: "Kryteria zwykłe" },
+    { key: "normalized", value: "Kryteria znormalizowane" }
+]
+
+let edges = [{ from: "B", to: 4 }, { from: "A", to: "B" }, { from: "A", to: 3 }];
 let graph = { nodes, edges }
 
-
-//You can also strongly type all the Components or SFCs that you pass into ReactDataSheet.
-let cellRenderer: ReactDataSheet.CellRenderer<GridElement, number> = (props) => {
-    const backgroundStyle = props.cell.value && props.cell.value < 0 ? { color: 'red' } : undefined;
-    return (
-        <td style={backgroundStyle} onMouseDown={props.onMouseDown} onMouseOver={props.onMouseOver} onDoubleClick={props.onDoubleClick} className="cell">
-            {props.children}
-        </td>
-    )
-}
-
-
-class SheetRenderer extends React.PureComponent<any> {
-    render() {
-        const { className, columns, onColumnDrop } = this.props
-        return (
-            <table className={className}>
-                <thead>
-                    <tr>
-                        <th className='cell read-only row-handle' key='$$actionCell' />
-                        {
-                            columns.map((col, index) => (
-                                <th className={className} style={{ width: col.width }}>{col.label}</th>
-                            ))
-                        }
-                    </tr>
-                </thead>
-                <tbody>
-                    {this.props.children}
-                </tbody>
-            </table>
-        )
-    }
-}
+const defaultVariantCount = 4;
+const defaultCriterionCount = 4;
 
 export default class View extends React.Component<any, IViewState> {
-    no: number;
-    cy: any;
+    _criterionCount: number;
+    _variantCount: number;
+    criterionInput: HTMLInputElement;
+
+    set variantCount(variantCount: number) {
+        if (variantCount > 20 || variantCount < 1) {
+            variantCount = defaultVariantCount;
+        }
+        this._variantCount = variantCount;
+    }
+
+    set criterionCount(criterionCount: number) {
+        if (criterionCount > 20 || criterionCount < 1) {
+            criterionCount = defaultCriterionCount;
+        }
+        this._criterionCount = criterionCount;
+    }
+
 
     constructor(props: any) {
         super(props);
+        let startCount = 3
+        this._criterionCount = startCount;
+        this.variantCount = startCount;
         this.state = {
-            columns: [
-                { label: 'Style', width: '40%' },
-                { label: 'IBUs', width: '20%' },
-                { label: 'Color (SRM)', width: '20%' },
-                { label: 'Rating', width: '20%' }
-            ],
-            grid: function () {
-                let data: GridElement[][] = [];
-                for (let i = 0; i < 10; i++) {
+            data: function () {
+                let data: CellType[][] = [];
+                for (let i = 0; i < 6; i++) {
                     data[i] = [];
-                    for (let j = 0; j < 10; j++) {
-                        data[i][j] = { value: j + i, width: 30 }
+                    for (let j = 0; j < startCount; j++) {
+                        data[i][j] = {
+                            variant: String.fromCharCode(65 + (i as number)),
+                            criterion: "K" + j,
+                            value: (j + i) % 3 ? j : i,
+                            width: 30,
+                            isMax: true,
+                            isNormalized: false,
+                            i: i,
+                            j: j
+                        } as CellType
                     }
                 }
-                return data as GridElement[][];
-            }()
+                return data as CellType[][];
+            }(),
+            graph: {
+                nodes: [
+                    { id: "D", label: "D" },
+                    { id: "A", label: "A" },
+                    { id: "B", label: "B" },
+                    { id: "C", label: "C" },
+                    { id: "E", label: "E" },
+                    { id: "F", label: "F" },
+                ],
+                edges: []
+            }
         };
 
     }
 
-    renderSheet(props) {
-        return <SheetRenderer columns={this.state.columns} {...props} />
+    updateGraph(data: CellType[][]) {
+        if (data === [])
+            data = this.state.data;
+        HasseDiagramApi.normalizeValues(data)
+            .then(normalizedTable => {
+                HasseDiagramApi.getGraph(normalizedTable)
+                    .then(x => {
+                        this.setState({ ...this.state, data: normalizedTable, graph: x.body });
+                    });
+            });
     }
 
-    render() {
-        return (
-            <div id="cy" className="cy" >
-                <DataSheet
-                    data={this.state.grid}
-                    valueRenderer={(cell) => cell.value}
-                    onCellsChanged={changes => {
-                        const grid = this.state.grid.map(row => [...row]);
-                        changes.forEach(({ cell, row, col, value }) => {
-                            grid[row][col] = { ...grid[row][col], value }
-                        })
-                        this.setState({ grid })
-                    }}
-                    cellRenderer={cellRenderer}
-                />
-                <div>
-                    <Graph
-                        graph={graph}
-                        identifier={1}
-                        style={{height: "1000px"}}
-                        options={{
-                            layout: {
-                                hierarchical: true
-                            },
-                            edges: {
-                                color: "#000000"
-                            }
-                        }}
+    setNormalizedValues(selected: string) {
+        let data = this.state.data;
+        data.forEach(row => {
+            row.forEach(cell => {
+                if (selected === "normalized") {
+                    cell.isNormalized = true;
+                    cell.normalizedValue = undefined;
+                }
+                else {
+                    cell.isNormalized = false;
+                    cell.normalizedValue = undefined;
+                }
+            });
+        });
+        this.updateGraph(data);
+    }
+
+render() {
+    return (
+        <div>
+            <div className="ms-Grid">
+                <div className="ms-Grid-row">
+                    <TextField
+                        className="ms-Grid-col ms-lg2"
+                        placeholder="Liczba kryteriow"
+                        title="Liczba kryteriow"
+                        onChanged={x => this.criterionCount = +x}
+                        onGetErrorMessage={x => IsCorrectNumber(x)}
+                    />
+                    <TextField
+                        className="ms-Grid-col ms-lg2"
+                        placeholder="Liczba wariantow"
+                        title="Liczba wariantow"
+                        onChanged={x => this.variantCount = +x}
+                        onGetErrorMessage={x => IsCorrectNumber(x)}
+                    />
+                    <DefaultButton
+                        title="Kryteria znormalizowane"
+                        className="ms-Grid-col ms-lg2"
+                        text="Akceptuj"
+                        onClick={() => this.updateGraph(this.state.data)}
                     />
                 </div>
+                <div className="ms-Grid-row">
+                    <div className="ms-Grid-col ms-lg2 form-group">
+                        <SimpleSelect
+                            onChange={x => this.setNormalizedValues(x)}
+                            values={criterionTypes}
+                        />
+                    </div>
+                </div>
             </div>
-        );
-    }
+            <Table
+                data={this.state.data}
+                onChange={x => {
+                    let data = this.state.data;
+                    data[x.i][x.j].value = x.value;
+                    this.setState({ ...this.state, data })
+                    this.updateGraph(data);
+                }}
+                onChangeMax={x => {
+                    let data = this.state.data;
+                    data.forEach(el => {
+                        el[x.criterionIndex].isMax = x.isMax;
+                    });
+                    this.setState({ ...this.state, data })
+                    this.updateGraph(data);
+                }}
+            />
+            <div className="border-view">
+                <Graph
+                    graph={this.state.graph}
+                    identifier={1}
+                    style={{ height: "600px" }}
+                    options={{
+                        edges: {
+                            arrowStrikethrough: true,
+                            color: "#000000"
+                        }
+                    }}
+                />
+            </div>
+        </div>
+    );
+}
 
 
 }

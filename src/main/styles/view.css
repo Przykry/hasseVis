@@ -1,0 +1,10 @@
+
+.border-view {
+    border: 1px;
+    border-color: royalblue;
+    box-sizing: border-box
+}
+
+.input-group-text, .cell-header { 
+    display: table-cell
+}

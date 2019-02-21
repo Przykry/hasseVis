@@ -1,20 +1,33 @@
 import * as React from "react";
 import Cell from "./Cell";
+import { CellType } from "./TableModel";
 
 interface IRowProps {
-    row: any[];
+    row: CellType[];
+    i: number | string;
+    isHeader?: boolean;
+    onChange: (value: CellType) => void;
 }
 
-export default class Row extends React.PureComponent<IRowProps> {
+export default class Row extends React.Component<IRowProps, any> {
     constructor(props: any) {
         super(props);
     }
 
     render() {
-        let { row } = this.props;
+        let { row, i, isHeader } = this.props;
         return (
             <tr>
-                {row.map(cell => <Cell cell={cell}/>)}
+                {!isHeader && <td className="">{String.fromCharCode(65 + (i as number))}</td>}
+                {row.map((cell, index) =>
+                    <Cell
+                        key={"cell-" + index}
+                        cell={cell}
+                        i={i}
+                        j={index}
+                        onChange={x => this.props.onChange(x)}
+                    />
+                )}
             </tr>
         );
     }

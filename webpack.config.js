@@ -14,7 +14,15 @@ module.exports = {
     },
     // Enable sourcemaps for debugging webpack's output.
     devtool: "source-map",
-
+    devServer: {
+        proxy: {
+            '/api': {
+                target: 'https://localhost:44324',
+                secure: false,
+                changeOrigin: true
+              }
+        }
+    },
     resolve: {
         // Add '.ts' and '.tsx' as resolvable extensions.
         extensions: ["*", ".webpack.js", ".web.js", ".ts", ".tsx", ".js", ".prod.ts"]
@@ -29,7 +37,7 @@ module.exports = {
             { test: /\.css$/, loader: "style-loader!css-loader" },
             { test: /\.less$/, use: ['style-loader', 'css-loader', 'less-loader'] },
             {
-                test: /\.(jpe?g|png|gif|svg)$/i,
+                test: /\.(png|woff|woff2|eot|ttf|svg)$/i,
                 loaders: [
                     'file-loader?hash=sha512&digest=hex&name=./asserts/[hash].[ext]',
                     'image-webpack-loader'
@@ -37,7 +45,7 @@ module.exports = {
             }
         ]
     },
-
+    
     // When importing a module whose path matches one of the following, just
     // assume a corresponding global variable exists and use that instead.
     // This is important because it allows us to avoid bundling all of our

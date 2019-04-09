@@ -1,39 +1,23 @@
+import { DefaultButton, TextField } from "office-ui-fabric-react";
 import * as React from "react";
-import { Button, TextField, DefaultButton } from "office-ui-fabric-react";
-import Table from "./table/Table";
-import "./table/style.css";
-import { HasseDiagramApi } from "./clientApi";
+import { HasseDiagramApi, HasseRequest } from "./clientApi";
 import Graph from "./Graph";
-import { DataSet } from "vis";
-import "./styles/view.less"
-import { NumberInput } from "./components/NumberInput";
-import { defaultsDeep } from "lodash";
-import { CellType } from "./table/TableModel";
-import Cell from "./table/Cell";
-import { IsCorrectNumber } from "./tools/ValidationTool";
+import { CriterionEstimation, IGraph } from "./models";
 import SimpleSelect from "./NormalizationTypeSelect";
+import Table from "./table/Table";
+import { CellType } from "./table/TableModel";
+import "./styles/view.less";
+import "./table/style.css";
+import TableDetails, { ITableModel, ITableDimension } from "./TableDetails";
 
 interface IViewState {
     data: CellType[][];
-    graph: any;
+    estimator: CriterionEstimation;
+    graph: IGraph;
+    isNormalized: boolean;
+    criterionCount: number;
+    variantCount: number;
 }
-
-let nodes = [
-    { id: "A", label: "A", cid: 1 },
-    { id: "B", label: "B", cid: 1 },
-    { id: 3, label: "3" },
-    { id: 4, label: "4" },
-    { id: 5, label: "5" }
-];
-
-const criterionTypes = [
-    { key: "normal", value: "Kryteria zwykłe" },
-    { key: "normalized", value: "Kryteria znormalizowane" }
-]
-
-let edges = [{ from: "B", to: 4 }, { from: "A", to: "B" }, { from: "A", to: 3 }];
-let graph = { nodes, edges }
-
 const defaultVariantCount = 4;
 const defaultCriterionCount = 4;
 
@@ -59,53 +43,77 @@ export default class View extends React.Component<any, IViewState> {
 
     constructor(props: any) {
         super(props);
-        let startCount = 3
-        this._criterionCount = startCount;
-        this.variantCount = startCount;
+
         this.state = {
-            data: function () {
-                let data: CellType[][] = [];
-                for (let i = 0; i < 6; i++) {
-                    data[i] = [];
-                    for (let j = 0; j < startCount; j++) {
-                        data[i][j] = {
-                            variant: String.fromCharCode(65 + (i as number)),
-                            criterion: "K" + j,
-                            value: (j + i) % 3 ? j : i,
-                            width: 30,
-                            isMax: true,
-                            isNormalized: false,
-                            i: i,
-                            j: j
-                        } as CellType
-                    }
-                }
-                return data as CellType[][];
-            }(),
+            variantCount: 4,
+            criterionCount: 4,
+            data: this.createTable(),
             graph: {
-                nodes: [
-                    { id: "D", label: "D" },
-                    { id: "A", label: "A" },
-                    { id: "B", label: "B" },
-                    { id: "C", label: "C" },
-                    { id: "E", label: "E" },
-                    { id: "F", label: "F" },
-                ],
+                nodes: [],
                 edges: []
-            }
+            },
+            estimator: CriterionEstimation.Pareto,
+            isNormalized: false,
         };
 
     }
 
-    updateGraph(data: CellType[][]) {
-        if (data === [])
-            data = this.state.data;
-        HasseDiagramApi.normalizeValues(data)
-            .then(normalizedTable => {
-                HasseDiagramApi.getGraph(normalizedTable)
-                    .then(x => {
-                        this.setState({ ...this.state, data: normalizedTable, graph: x.body });
-                    });
+    createTable(data: CellType[][] = [], tableDimension: ITableDimension = undefined) {
+        let { criterionCount, variantCount } = tableDimension || { criterionCount: 0, variantCount: 0 };
+        if (!this.state)
+            variantCount = criterionCount = 4
+        else if (!criterionCount && !variantCount) {
+            criterionCount = this.state.criterionCount;
+            variantCount = this.state.variantCount;
+        }
+
+        for (let i = 0; i < criterionCount; i++) {
+            if (!data[i])
+                data[i] = [];
+            for (let j = 0; j < variantCount; j++) {
+                if (!data[i][j])
+                    data[i][j] = {
+                        variant: String.fromCharCode(65 + (i as number)),
+                        criterion: "K" + j,
+                        value: (j + i) % 3 ? j : i,
+                        width: 30,
+                        isMax: true,
+                        weight: 1,
+                        isNormalized: false,
+                        i: i,
+                        j: j
+                    } as CellType
+            }
+            data[i].length = variantCount;
+        }
+        data.length = criterionCount;
+
+        return data;
+    }
+
+    updateGraph(data: CellType[][], isNormalized: boolean = undefined, tableDimension: ITableDimension = undefined) {
+        let { criterionCount, variantCount } = tableDimension
+            || {
+                criterionCount: this.state.criterionCount,
+                variantCount: this.state.variantCount
+            };
+        data = this.createTable(data, tableDimension);
+        isNormalized = isNormalized !== undefined ? isNormalized : this.state.isNormalized;
+
+        HasseDiagramApi.getGraph({
+            table: data,
+            criterionEstimation: this.state.estimator,
+            isNormalized: isNormalized
+        } as HasseRequest)
+            .then(x => {
+                this.setState({
+                    ...this.state,
+                    criterionCount,
+                    variantCount,
+                    data: x.body.table,
+                    graph: x.body.graph,
+                    isNormalized: isNormalized
+                });
             });
     }
 
@@ -119,81 +127,92 @@ export default class View extends React.Component<any, IViewState> {
                 }
                 else {
                     cell.isNormalized = false;
+                    cell.criterionEstimator = CriterionEstimation.Pareto;
                     cell.normalizedValue = undefined;
                 }
             });
         });
+        this.updateGraph(data, selected === "normalized");
+    }
+
+    setEstimatiomn(selected: string) {
+        let data = this.state.data;
+        data.forEach(row => {
+            row.forEach(cell => {
+                cell.criterionEstimator = Number(selected);
+            });
+        });
+        this.setState({ ...this.state, estimator: Number(selected) });
         this.updateGraph(data);
     }
 
-render() {
-    return (
-        <div>
-            <div className="ms-Grid">
-                <div className="ms-Grid-row">
-                    <TextField
-                        className="ms-Grid-col ms-lg2"
-                        placeholder="Liczba kryteriow"
-                        title="Liczba kryteriow"
-                        onChanged={x => this.criterionCount = +x}
-                        onGetErrorMessage={x => IsCorrectNumber(x)}
-                    />
-                    <TextField
-                        className="ms-Grid-col ms-lg2"
-                        placeholder="Liczba wariantow"
-                        title="Liczba wariantow"
-                        onChanged={x => this.variantCount = +x}
-                        onGetErrorMessage={x => IsCorrectNumber(x)}
-                    />
-                    <DefaultButton
-                        title="Kryteria znormalizowane"
-                        className="ms-Grid-col ms-lg2"
-                        text="Akceptuj"
-                        onClick={() => this.updateGraph(this.state.data)}
-                    />
-                </div>
-                <div className="ms-Grid-row">
-                    <div className="ms-Grid-col ms-lg2 form-group">
-                        <SimpleSelect
-                            onChange={x => this.setNormalizedValues(x)}
-                            values={criterionTypes}
-                        />
-                    </div>
-                </div>
-            </div>
-            <Table
-                data={this.state.data}
-                onChange={x => {
-                    let data = this.state.data;
-                    data[x.i][x.j].value = x.value;
-                    this.setState({ ...this.state, data })
-                    this.updateGraph(data);
-                }}
-                onChangeMax={x => {
-                    let data = this.state.data;
-                    data.forEach(el => {
-                        el[x.criterionIndex].isMax = x.isMax;
-                    });
-                    this.setState({ ...this.state, data })
-                    this.updateGraph(data);
-                }}
-            />
-            <div className="border-view">
-                <Graph
-                    graph={this.state.graph}
-                    identifier={1}
-                    style={{ height: "600px" }}
-                    options={{
-                        edges: {
-                            arrowStrikethrough: true,
-                            color: "#000000"
-                        }
-                    }}
+    update(value: ITableModel) {
+        if (value === undefined) {
+            return;
+        }
+        if (value.criterionEstimation) {
+            this.setEstimatiomn(value.criterionEstimation);
+        }
+        if (value.criterionType) {
+            this.setNormalizedValues(value.criterionType);
+        }
+        if (value.tableDimension) {
+            this.updateGraph(this.state.data, undefined, value.tableDimension);
+        }
+    }
+
+    render() {
+        return (
+            <div>
+                <TableDetails
+                    data={this.state.data}
+                    update={(tableDimension) => this.update(tableDimension)}
+                    onChange={(value: ITableModel) => this.update(value)}
+                    isNormalized={this.state.isNormalized}
                 />
+                <Table
+                    data={this.state.data}                   
+                    variants={this.state.graph.nodes}
+                    onChange={x => {
+                        let data = this.state.data;
+                        data[x.i][x.j].value = x.value;
+                        this.setState({ ...this.state, data })
+                        this.updateGraph(data);
+                    }}
+                    onChangeMax={x => {
+                        let data = this.state.data;
+                        data.forEach(el => {
+                            el[x.criterionIndex].isMax = x.isMax;
+                        });
+                        this.setState({ ...this.state, data })
+                        this.updateGraph(data);
+                    }}
+                    onChangeCriterionValue={x => {
+                        let data = this.state.data;
+                        data.forEach(el => {
+                            el[x.criterionIndex].weight = x.value;
+                        });
+                        this.setState({ ...this.state, data })
+                        this.updateGraph(data);
+                    }}
+                    criterionEstimator={this.state.estimator}
+                />
+                <div className="border-view">
+                    <Graph
+                        graph={this.state.graph}
+                        identifier={1}
+                        style={{ height: "600px" }}
+                        options={{
+                            edges: {
+                                arrowStrikethrough: true,
+                                color: "#000000"
+                            }
+                        }}
+                    />
+                </div>
             </div>
-        </div>
-    );
-}
+        );
+    }
 
 
 }

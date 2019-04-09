@@ -1,4 +1,8 @@
+import { CriterionEstimation } from "../models";
+
 export interface CellType {
+    weight: number;
+    criterionEstimator: CriterionEstimation;
     variant: string;
     criterion: string;
     normalizedValue?: number;

@@ -27,7 +27,7 @@ export default class Cell extends React.PureComponent<ICellProps> {
                     />
                     {cell.isNormalized &&
                         <div className="input-group-append">
-                            <span style={{minWidth: "10vh", maxWidth: "10vh"}} className="input-group-text" >{Number.parseFloat(cell.normalizedValue.toString()).toFixed(2)}</span>
+                            <span style={{minWidth: "8%"}} className="input-group-text" >{Number.parseFloat(cell.normalizedValue.toString()).toFixed(2)}</span>
                         </div>
                     }
                 </div>

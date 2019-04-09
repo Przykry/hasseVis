@@ -1,11 +1,14 @@
 import * as React from "react";
 import Cell from "./Cell";
 import { CellType } from "./TableModel";
+import { CriterionEstimation, INode } from "../models";
 
 interface IRowProps {
     row: CellType[];
     i: number | string;
     isHeader?: boolean;
+    variant: INode;
+    criterionEstimator: CriterionEstimation;
     onChange: (value: CellType) => void;
 }
 
@@ -28,6 +31,11 @@ export default class Row extends React.Component<IRowProps, any> {
                         onChange={x => this.props.onChange(x)}
                     />
                 )}
+                {this.props.criterionEstimator !== CriterionEstimation.Pareto &&
+                    <td>
+                        {this.props.variant.criterionSum}
+                    </td>
+                }
             </tr>
         );
     }

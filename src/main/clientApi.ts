@@ -1,6 +1,12 @@
 import * as request from 'superagent';
-import config from './dev';
 import { CellType } from './table/TableModel';
+import { CriterionEstimation } from './models';
+
+export interface HasseRequest {
+    table: CellType[][];
+    criterionEstimation: number;
+    isNormalized: boolean;
+}
 
 export class HasseDiagramApi {
     static normalizeValues(table: CellType[][]) {
@@ -12,10 +18,10 @@ export class HasseDiagramApi {
             });
     }
 
-    static getGraph(table: CellType[][]) {
+    static getGraph(req: HasseRequest) {
         return request.post("api/hasseDiagram")
             .type('application/json')
-            .send(JSON.stringify(table));
+            .send(JSON.stringify(req));
     }
 }
 

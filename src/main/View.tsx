@@ -91,7 +91,7 @@ export default class View extends React.Component<any, IViewState> {
         return data;
     }
 
-    updateGraph(data: CellType[][], isNormalized: boolean = undefined, tableDimension: ITableDimension = undefined) {
+    updateGraph(data: CellType[][], isNormalized: boolean = undefined, tableDimension: ITableDimension = undefined, estimator: Number = undefined) {
         let { criterionCount, variantCount } = tableDimension
             || {
                 criterionCount: this.state.criterionCount,
@@ -99,10 +99,10 @@ export default class View extends React.Component<any, IViewState> {
             };
         data = this.createTable(data, tableDimension);
         isNormalized = isNormalized !== undefined ? isNormalized : this.state.isNormalized;
-
+        estimator = estimator !== undefined ? estimator : this.state.estimator;
         HasseDiagramApi.getGraph({
             table: data,
-            criterionEstimation: this.state.estimator,
+            criterionEstimation: estimator,
             isNormalized: isNormalized
         } as HasseRequest)
             .then(x => {
@@ -110,6 +110,7 @@ export default class View extends React.Component<any, IViewState> {
                     ...this.state,
                     criterionCount,
                     variantCount,
+                    estimator: Number(estimator),
                     data: x.body.table,
                     graph: x.body.graph,
                     isNormalized: isNormalized
@@ -143,7 +144,7 @@ export default class View extends React.Component<any, IViewState> {
             });
         });
         this.setState({ ...this.state, estimator: Number(selected) });
-        this.updateGraph(data);
+        this.updateGraph(data, undefined, undefined, Number(selected));
     }
 
     update(value: ITableModel) {

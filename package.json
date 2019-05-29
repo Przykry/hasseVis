@@ -1,5 +1,10 @@
 {
   "version": "1.0.0",
+  "author": {
+    "email": "przybylek.krzyszto@gmail.com",
+    "name": "Krzysztof Przybyłek"
+  },
+  "license": "MIT",
   "main": "index.js",
   "scripts": {
     "start": "yarn run build:dev | yarn run serve | yarn run develop",

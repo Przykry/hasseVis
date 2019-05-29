@@ -77,9 +77,9 @@ export default class View extends React.Component<any, IViewState> {
                         criterion: "K" + j,
                         value: (j + i) % 3 ? j : i,
                         width: 30,
-                        isMax: true,
+                        isMax: !data[i][0] ? true : data[i][0].isMax,
                         weight: 1,
-                        isNormalized: false,
+                        isNormalized:  !data[i][0] ? false : data[i][0].isNormalized,
                         i: i,
                         j: j
                     } as CellType
@@ -158,7 +158,7 @@ export default class View extends React.Component<any, IViewState> {
             this.setNormalizedValues(value.criterionType);
         }
         if (value.tableDimension) {
-            this.updateGraph(this.state.data, undefined, value.tableDimension);
+            this.updateGraph(this.state.data, this.state.isNormalized, value.tableDimension, this.state.estimator);
         }
     }
 

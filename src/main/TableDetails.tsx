@@ -1,7 +1,7 @@
 import * as React from "react";
 import { TextField } from "office-ui-fabric-react/lib/components/TextField";
 import { DefaultButton } from "office-ui-fabric-react/lib/components/Button";
-import SimpleSelect from "./NormalizationTypeSelect";
+import SimpleSelect from "./SimpleSelect";
 import { IsCorrectNumber } from "./tools/ValidationTool";
 import { CriterionEstimation } from "./models";
 import { CellType } from "./table/TableModel";
@@ -24,6 +24,8 @@ interface ITableDetailsState extends ITableDimension {
 
 interface ITableDetailsProps extends ITableModel {
     data: CellType[][];
+    criterionEstimation: string;
+    isNormalized: boolean;
     update: (data: any) => void;
     onChange: (objectValue?: ITableModel) => void;
 }
@@ -81,6 +83,7 @@ export default class TableDetails extends React.Component<ITableDetailsProps, IT
                     <div className="ms-Grid-col ms-lg2 form-group">
                         <SimpleSelect
                             key="criterionSelect"
+                            value={this.props.isNormalized ? criterionTypes['normalized'] : criterionTypes['normal']}
                             onChange={x => this.props.onChange({ criterionType: x })}
                             values={criterionTypes}
                         />
@@ -88,6 +91,7 @@ export default class TableDetails extends React.Component<ITableDetailsProps, IT
                             key="estimationSelect"
                             onChange={x => this.props.onChange({ criterionEstimation: x })}
                             values={criterionEstimation}
+                            value={this.props.criterionEstimation}
                             disabled={!this.props.isNormalized}
                         />
                     </div>

@@ -5,6 +5,7 @@ interface ISimpleSelectProps {
     onChange: (value: string) => void;
     values: { key: string, value: string }[];
     disabled?: boolean;
+    value: string;
 }
 
 export class SimpleSelect extends React.Component<ISimpleSelectProps, any> {
@@ -12,7 +13,7 @@ export class SimpleSelect extends React.Component<ISimpleSelectProps, any> {
         return (
             <select className="form-control"
                 onChange={x => this.props.onChange(x.currentTarget.value)}
-                defaultValue="normal"
+                value={this.props.value}
                 disabled={this.props.disabled}
             >
                 {this.props.values.map(x => {

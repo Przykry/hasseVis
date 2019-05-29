@@ -3,7 +3,7 @@ import * as React from "react";
 import { HasseDiagramApi, HasseRequest } from "./clientApi";
 import Graph from "./Graph";
 import { CriterionEstimation, IGraph } from "./models";
-import SimpleSelect from "./NormalizationTypeSelect";
+import SimpleSelect from "./SimpleSelect";
 import Table from "./table/Table";
 import { CellType } from "./table/TableModel";
 import "./styles/view.less";
@@ -77,9 +77,9 @@ export default class View extends React.Component<any, IViewState> {
                         criterion: "K" + j,
                         value: (j + i) % 3 ? j : i,
                         width: 30,
-                        isMax: !data[i][0] ? true : data[i][0].isMax,
+                        isMax: !data[0][j] ? true : data[0][j].isMax,
                         weight: 1,
-                        isNormalized:  !data[i][0] ? false : data[i][0].isNormalized,
+                        isNormalized:  !this.state ? false : this.state.isNormalized,
                         i: i,
                         j: j
                     } as CellType
@@ -133,7 +133,7 @@ export default class View extends React.Component<any, IViewState> {
                 }
             });
         });
-        this.updateGraph(data, selected === "normalized");
+        this.updateGraph(data, selected === "normalized", undefined, selected === "normalized" ? undefined : CriterionEstimation.Pareto);
     }
 
     setEstimatiomn(selected: string) {
@@ -170,6 +170,7 @@ export default class View extends React.Component<any, IViewState> {
                     update={(tableDimension) => this.update(tableDimension)}
                     onChange={(value: ITableModel) => this.update(value)}
                     isNormalized={this.state.isNormalized}
+                    criterionEstimation={this.state.estimator.toString()}
                 />
                 <Table
                     data={this.state.data}                   

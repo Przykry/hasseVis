@@ -1,0 +1,51 @@
+{
+  "name": "oz-generator",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "lts": "^1.2.0",
+    "office-ui-fabric-react": "^7.88.0",
+    "react": "^16.12.0",
+    "react-dom": "^16.12.0",
+    "react-redux": "^7.1.3",
+    "react-router-dom": "^5.1.2",
+    "redux": "^4.0.5",
+    "redux-thunk": "^2.3.0"
+  },
+  "devDependencies": {
+    "@types/jest": "24.9.0",
+    "@types/node": "13.1.8",
+    "@types/react": "16.9.19",
+    "@types/react-dom": "16.9.5",
+    "@types/react-redux": "^7.1.7",
+    "@types/react-router-dom": "^5.1.3",
+    "@types/redux": "^3.6.0",
+    "css-loader": "*",
+    "file-loader": "^5.0.2",
+    "image-webpack-loader": "^6.0.0",
+    "redux-devtools-extension": "^2.13.8",
+    "source-map-loader": "^0.2.4",
+    "style-loader": "*",
+    "ts-loader": "^6.2.1",
+    "typescript": "^3.7.5",
+    "webpack": "^4.41.5",
+    "webpack-cli": "^3.3.10",
+    "webpack-dev-server": "^3.10.2"
+  },
+  "scripts": {
+    "start": "yarn run build:dev | yarn run develop",
+    "start-prod": "yarn run install | yarn run build:prod | yarn run production",
+    "develop": "webpack-dev-server --env=dev --progress --colors --port 8090 --host 0.0.0.0",
+    "production": "webpack-dev-server --env=prod --progress --colors --port 8090",
+    "build:prod": "webpack --env=prod",
+    "build:dev": "webpack --env=dev",
+    "build": "react-scripts build",
+    "test": "react-scripts test --env=jsdom",
+    "eject": "react-scripts eject"
+  },
+  "description": "This project was bootstrapped with [Create React App](https://github.com/facebookincubator/create-react-app).",
+  "main": "index.js",
+  "keywords": [],
+  "author": "Krzysztof Przybyłek",
+  "license": "ISC"
+}

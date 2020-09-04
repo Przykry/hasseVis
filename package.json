@@ -42,7 +42,7 @@
     "bootstrap": "3",
     "d3": "^5.7.0",
     "less": "^3.8.1",
-    "lodash.defaultsdeep": "^4.6.0",
+    "lodash.defaultsdeep": "^4.6.1",
     "office-ui-fabric-react": "^6.32.0",
     "react": "^16.4.1",
     "react-cytoscape": "^1.0.6",
